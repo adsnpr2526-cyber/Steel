@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>โปรแกรมคำนวณและถอดแบบ BOQ งานเหล็ก (Steel & Materials BOQ Calculator)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Prompt -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #f3f4f6;
+        }
+        /* Custom Scrollbar for tables */
+        .overflow-x-auto::-webkit-scrollbar {
+            height: 8px;
+        }
+        .overflow-x-auto::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Header / Navbar -->
+    <header class="bg-indigo-900 text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <i class="fa-solid fa-cubes-stacked text-amber-400 text-3xl"></i>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-bold">ระบบคำนวณถอดแบบเหล็ก & BOQ</h1>
+                    <p class="text-xs text-indigo-200">ระบบถอดแบบ คำนวณน้ำหนัก และประมาณราคาเหล็กกัลวาไนซ์ & เหล็กรูปพรรณ มอก.</p>
+                </div>
+            </div>
+            <!-- Quick Stats Header Bar -->
+            <div class="flex items-center gap-4 text-sm bg-indigo-800/80 px-4 py-2 rounded-lg border border-indigo-700">
+                <div>
+                    <span class="text-indigo-300 block text-xs">รายการใน BOQ:</span>
+                    <span id="stat-items-count" class="font-bold text-amber-300">0</span> รายการ
+                </div>
+                <div class="h-8 w-px bg-indigo-700"></div>
+                <div>
+                    <span class="text-indigo-300 block text-xs">น้ำหนักรวม:</span>
+                    <span id="stat-total-weight" class="font-bold text-emerald-300">0.00</span> กก.
+                </div>
+                <div class="h-8 w-px bg-indigo-700"></div>
+                <div>
+                    <span class="text-indigo-300 block text-xs">ราคารวมประมาณการ:</span>
+                    <span id="stat-total-price" class="font-bold text-amber-400">0.00</span> ฿
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex-grow w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left Column: Input Form & Steel Selector (5 Cols) -->
+        <section class="lg:col-span-5 space-y-6">
+            
+            <!-- Selector Card -->
+            <div class="bg-white rounded-xl shadow-md p-5 border border-slate-200">
+                <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2 border-b pb-2">
+                    <i class="fa-solid fa-square-plus text-indigo-600"></i> เลือกรายการเหล็กเข้า BOQ
+                </h2>
+
+                <form id="add-boq-form" class="space-y-4">
+                    <!-- Category Selection -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">หมวดหมู่เหล็ก</label>
+                        <select id="steel-category" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <option value="gi_box_2x6">เหล็กกล่องกัลวาไนซ์ 2"x6" (50x150 มม.)</option>
+                            <option value="gi_box_2x8">เหล็กกล่องกัลวาไนซ์ 2"x8" (50x200 มม.)</option>
+                            <option value="gi_box_other">เหล็กกล่องกัลวาไนซ์ ขนาดอื่น ๆ</option>
+                            <option value="pipe_round">ท่อเหล็กกลม / ท่อแป๊ป</option>
+                            <option value="c_channel">เหล็กตัวซี (C-Channel)</option>
+                        </select>
+                    </div>
+
+                    <!-- Size / Thickness Selection -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">ขนาดและความหนา (มม.)</label>
+                        <select id="steel-spec" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <!-- Populated via JavaScript -->
+                        </select>
+                    </div>
+
+                    <!-- Spec Details Preview -->
+                    <div id="spec-info" class="bg-indigo-50 border border-indigo-100 rounded-lg p-3 text-xs space-y-1 text-indigo-900">
+                        <div class="flex justify-between">
+                            <span class="text-slate-600">น้ำหนักประมาณ/ท่อน (6ม.):</span>
+                            <span id="preview-weight" class="font-semibold text-indigo-700">0.00 กก.</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-600">สูตรพื้นที่หน้าตัดโดยประมาณ:</span>
+                            <span id="preview-dim" class="font-medium text-slate-700">-</span>
+                        </div>
+                    </div>
+
+                    <!-- Input Parameters (Quantity, Unit Price, Remark) -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">จำนวน (ท่อน / 6 ม.)</label>
+                            <input type="number" id="input-qty" min="1" value="1" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">ราคา/หน่วย (บาท)</label>
+                            <input type="number" id="input-price" step="0.01" placeholder="คำนวณอัตโนมัติ" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">หมายเหตุ / สเปกตำแหน่งที่ใช้</label>
+                        <input type="text" id="input-remark" placeholder="เช่น คานโครงหลังคา, เสาโชว์ชั้น 1" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-4 rounded-lg shadow transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-plus"></i> เพิ่มลงรายการ BOQ
+                    </button>
+                </form>
+            </div>
+
+            <!-- Quick Reference Card (Steel Specs Table) -->
+            <div class="bg-white rounded-xl shadow-md p-5 border border-slate-200">
+                <h2 class="text-lg font-semibold text-slate-800 mb-3 flex items-center justify-between border-b pb-2">
+                    <span class="flex items-center gap-2">
+                        <i class="fa-solid fa-table text-indigo-600"></i> ตารางพิกัดน้ำหนักเหล็ก มอก./กัลวาไนซ์
+                    </span>
+                    <span class="text-xs text-indigo-600 font-normal">ความยาว 6 เมตร/ท่อน</span>
+                </h2>
+                
+                <div class="mb-3">
+                    <div class="flex gap-2">
+                        <button type="button" id="tab-2x6" onclick="switchTableTab('gi_box_2x6')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-sm">2"x6" (50x150)</button>
+                        <button type="button" id="tab-2x8" onclick="switchTableTab('gi_box_2x8')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200">2"x8" (50x200)</button>
+                        <button type="button" id="tab-other" onclick="switchTableTab('gi_box_other')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200">ขนาดอื่น ๆ</button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto max-h-64 border rounded-lg">
+                    <table class="w-full text-xs text-left text-slate-600">
+                        <thead class="text-xs text-slate-700 uppercase bg-slate-100 sticky top-0">
+                            <tr>
+                                <th scope="col" class="px-3 py-2">ความหนา (มม.)</th>
+                                <th scope="col" class="px-3 py-2">น้ำหนัก/เมตร (กก.)</th>
+                                <th scope="col" class="px-3 py-2">น้ำหนัก/ท่อน 6m (กก.)</th>
+                                <th scope="col" class="px-3 py-2 text-right">แอคชั่น</th>
+                            </tr>
+                        </thead>
+                        <tbody id="quick-spec-tbody" class="divide-y divide-slate-100">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Right Column: BOQ Table & Summary (7 Cols) -->
+        <section class="lg:col-span-7 space-y-6">
+            
+            <div class="bg-white rounded-xl shadow-md p-5 border border-slate-200 flex flex-col h-full">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b pb-4 mb-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-file-invoice-dollar text-emerald-600"></i> ตารางรายการ BOQ ถอดแบบ
+                        </h2>
+                        <p class="text-xs text-slate-500">ตารางสรุปรายการเหล็กทั้งหมดที่เลือกไว้สำหรับใช้งาน</p>
+                    </div>
+                    <div class="flex items-center gap-2 w-full sm:w-auto">
+                        <button onclick="clearAllBOQ()" class="text-xs text-rose-600 hover:text-rose-800 px-3 py-2 border border-rose-200 hover:border-rose-300 rounded-lg bg-rose-50 transition">
+                            <i class="fa-solid fa-trash-can"></i> ล้างรายการ
+                        </button>
+                        <button onclick="exportToCSV()" class="text-xs text-emerald-700 hover:text-emerald-900 px-3 py-2 border border-emerald-300 rounded-lg bg-emerald-50 font-medium transition flex items-center gap-1">
+                            <i class="fa-solid fa-file-excel"></i> ส่งออก Excel (CSV)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- BOQ Table Container -->
+                <div class="overflow-x-auto flex-grow rounded-lg border border-slate-200">
+                    <table class="w-full text-xs text-left text-slate-600">
+                        <thead class="text-xs text-slate-700 uppercase bg-slate-100 border-b border-slate-200">
+                            <tr>
+                                <th class="px-3 py-3">#</th>
+                                <th class="px-3 py-3">รายการ / ขนาด / ความหนา</th>
+                                <th class="px-3 py-3 text-center">จำนวน (ท่อน)</th>
+                                <th class="px-3 py-3 text-right">น.น. รวม (กก.)</th>
+                                <th class="px-3 py-3 text-right">ราคา/ท่อน (฿)</th>
+                                <th class="px-3 py-3 text-right">ราคารวม (฿)</th>
+                                <th class="px-3 py-3 text-center">การจัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="boq-tbody" class="divide-y divide-slate-100">
+                            <!-- Dynamic Content -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Empty State Message -->
+                <div id="empty-state" class="text-center py-12 text-slate-400">
+                    <i class="fa-solid fa-folder-open text-4xl mb-2"></i>
+                    <p class="text-sm">ยังไม่มีรายการเหล็กใน BOQ กรุณาเลือกรายการจากเมนูด้านซ้าย</p>
+                </div>
+
+                <!-- Summary Footer Box -->
+                <div class="mt-6 pt-4 border-t border-slate-200 bg-slate-50 p-4 rounded-xl space-y-3">
+                    <h3 class="text-sm font-semibold text-slate-700">สรุปประมาณการวัสดุและงบประมาณ</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="bg-white p-3 rounded-lg border border-slate-200">
+                            <span class="text-xs text-slate-500 block">จํานวนรวมทั้งสิ้น</span>
+                            <span id="summary-total-qty" class="text-lg font-bold text-slate-800">0</span> <span class="text-xs text-slate-500">ท่อน</span>
+                        </div>
+                        <div class="bg-white p-3 rounded-lg border border-slate-200">
+                            <span class="text-xs text-slate-500 block">น้ำหนักรวมทั้งสิ้น</span>
+                            <span id="summary-total-weight" class="text-lg font-bold text-emerald-600">0.00</span> <span class="text-xs text-slate-500">กก.</span>
+                        </div>
+                        <div class="bg-white p-3 rounded-lg border border-slate-200">
+                            <span class="text-xs text-slate-500 block">งบประมาณรวมประมาณการ</span>
+                            <span id="summary-total-price" class="text-lg font-bold text-indigo-600">0.00</span> <span class="text-xs text-slate-500">บาท</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- JavaScript Section -->
+    <script>
+        /**
+         * STEEL_DATABASE: ฐานข้อมูลรายการเหล็ก
+         * น้ำหนักต่อท่อน (6 เมตร) คำนวณจากสูตรมาตรฐานวิศวกรรมโครงสร้างเหล็ก:
+         * ความหนาแน่นเหล็ก = 7850 กก./ลบ.ม.
+         * เพิ่มความหนาเหล็กกล่อง 2"x6" (50x150 มม.) และ 2"x8" (50x200 มม.) ครบทุกขนาด 1.2 - 4.0 มม.
+         */
+        const STEEL_DATABASE = {
+            // เหล็กกล่องกัลวาไนซ์ 2"x6" (50 x 150 มม.)
+            "gi_box_2x6": [
+                { id: "g2x6_12", name: "เหล็กกล่องกัลวาไนซ์ 2\"x6\" (50x150 มม.) หนา 1.2 มม.", width: 50, height: 150, thickness: 1.2, weightPerMeter: 3.65, weightPerPiece: 21.90, defaultPrice: 780 },
+                { id: "g2x6_14", name: "เหล็กกล่องกัลวาไนซ์ 2\"x6\" (50x150 มม.) หนา 1.4 มม.", width: 50, height: 150, thickness: 1.4, weightPerMeter: 4.24, weightPerPiece: 25.44, defaultPrice: 890 },
+                { id: "g2x6_15", name: "เหล็กกล่องกัลวาไนซ์ 2\"x6\" (50x150 มม.) หนา 1.5 มม.", width: 50, height: 150, thickness: 1.5, weightPerMeter: 4.54, weightPerPiece: 27.24, defaultPrice: 950 },
+                { id: "g2x6_16", name: "เหล็กกล่องกัลวาไนซ์ 2\"x6\" (50x150 มม.) หนา 1.6 มม.", width: 50, height: 150, thickness: 1.6, weightPerMeter: 4.83, weightPerPiece: 28.98, defaultPrice: 1010 },
+                { id: "g2x6_18", name: "เหล็กกล่องกัลวาไนซ์ 2\"x6\" (50x150 มม.) หนา 1.8 มม.", width: 50, height: 150, thickness: 1.8, weightPerMeter: 5.42, weightPerPiece: 32.52, defaultPrice: 1130 },
+                { id: "g2x6_20", name: "เหล็กกล่องกัลวาไนซ์ 2\"x6\" (50x150 มม.) หนา 2.0 มม.", width: 50, height: 150, thickness: 2.0, weightPerMeter: 6.00, weightPerPiece: 36.00, defaultPrice: 1260 },
+                { id: "g2x6_23", name: "เหล็กกล่องกัลวาไนซ์ 2\"x6\" (50x150 มม.) หนา 2.3 มม.", width: 50, height: 150, thickness: 2.3, weightPerMeter: 6.87, weightPerPiece: 41.22, defaultPrice: 1440 },
+                { id: "g2x6_25", name: "เหล็กกล่องกัลวาไนซ์ 2\"x6\" (50x150 มม.) หนา 2.5 มม.", width: 50, height: 150, thickness: 2.5, weightPerMeter: 7.44, weightPerPiece: 44.64, defaultPrice: 1560 },
+                { id: "g2x6_28", name: "เหล็กกล่องกัลวาไนซ์ 2\"x6\" (50x150 มม.) หนา 2.8 มม.", width: 50, height: 150, thickness: 2.8, weightPerMeter: 8.29, weightPerPiece: 49.74, defaultPrice: 1740 },
+                { id: "g2x6_30", name: "เหล็กกล่องกัลวาไนซ์ 2\"x6\" (50x150 มม.) หนา 3.0 มม.", width: 50, height: 150, thickness: 3.0, weightPerMeter: 8.85, weightPerPiece: 53.10, defaultPrice: 1860 },
+                { id: "g2x6_32", name: "เหล็กกล่องกัลวาไนซ์ 2\"x6\" (50x150 มม.) หนา 3.2 มม.", width: 50, height: 150, thickness: 3.2, weightPerMeter: 9.41, weightPerPiece: 56.46, defaultPrice: 1980 },
+                { id: "g2x6_36", name: "เหล็กกล่องกัลวาไนซ์ 2\"x6\" (50x150 มม.) หนา 3.6 มม.", width: 50, height: 150, thickness: 3.6, weightPerMeter: 10.53, weightPerPiece: 63.18, defaultPrice: 2210 },
+                { id: "g2x6_40", name: "เหล็กกล่องกัลวาไนซ์ 2\"x6\" (50x150 มม.) หนา 4.0 มม.", width: 50, height: 150, thickness: 4.0, weightPerMeter: 11.63, weightPerPiece: 69.78, defaultPrice: 2440 }
+            ],
+            // เหล็กกล่องกัลวาไนซ์ 2"x8" (50 x 200 มม.)
+            "gi_box_2x8": [
+                { id: "g2x8_12", name: "เหล็กกล่องกัลวาไนซ์ 2\"x8\" (50x200 มม.) หนา 1.2 มม.", width: 50, height: 200, thickness: 1.2, weightPerMeter: 4.59, weightPerPiece: 27.54, defaultPrice: 960 },
+                { id: "g2x8_14", name: "เหล็กกล่องกัลวาไนซ์ 2\"x8\" (50x200 มม.) หนา 1.4 มม.", width: 50, height: 200, thickness: 1.4, weightPerMeter: 5.34, weightPerPiece: 32.04, defaultPrice: 1120 },
+                { id: "g2x8_15", name: "เหล็กกล่องกัลวาไนซ์ 2\"x8\" (50x200 มม.) หนา 1.5 มม.", width: 50, height: 200, thickness: 1.5, weightPerMeter: 5.71, weightPerPiece: 34.26, defaultPrice: 1200 },
+                { id: "g2x8_16", name: "เหล็กกล่องกัลวาไนซ์ 2\"x8\" (50x200 มม.) หนา 1.6 มม.", width: 50, height: 200, thickness: 1.6, weightPerMeter: 6.08, weightPerPiece: 36.48, defaultPrice: 1280 },
+                { id: "g2x8_18", name: "เหล็กกล่องกัลวาไนซ์ 2\"x8\" (50x200 มม.) หนา 1.8 มม.", width: 50, height: 200, thickness: 1.8, weightPerMeter: 6.83, weightPerPiece: 40.98, defaultPrice: 1430 },
+                { id: "g2x8_20", name: "เหล็กกล่องกัลวาไนซ์ 2\"x8\" (50x200 มม.) หนา 2.0 มม.", width: 50, height: 200, thickness: 2.0, weightPerMeter: 7.57, weightPerPiece: 45.42, defaultPrice: 1590 },
+                { id: "g2x8_23", name: "เหล็กกล่องกัลวาไนซ์ 2\"x8\" (50x200 มม.) หนา 2.3 มม.", width: 50, height: 200, thickness: 2.3, weightPerMeter: 8.67, weightPerPiece: 52.02, defaultPrice: 1820 },
+                { id: "g2x8_25", name: "เหล็กกล่องกัลวาไนซ์ 2\"x8\" (50x200 มม.) หนา 2.5 มม.", width: 50, height: 200, thickness: 2.5, weightPerMeter: 9.40, weightPerPiece: 56.40, defaultPrice: 1970 },
+                { id: "g2x8_28", name: "เหล็กกล่องกัลวาไนซ์ 2\"x8\" (50x200 มม.) หนา 2.8 มม.", width: 50, height: 200, thickness: 2.8, weightPerMeter: 10.49, weightPerPiece: 62.94, defaultPrice: 2200 },
+                { id: "g2x8_30", name: "เหล็กกล่องกัลวาไนซ์ 2\"x8\" (50x200 มม.) หนา 3.0 มม.", width: 50, height: 200, thickness: 3.0, weightPerMeter: 11.21, weightPerPiece: 67.26, defaultPrice: 2350 },
+                { id: "g2x8_32", name: "เหล็กกล่องกัลวาไนซ์ 2\"x8\" (50x200 มม.) หนา 3.2 มม.", width: 50, height: 200, thickness: 3.2, weightPerMeter: 11.92, weightPerPiece: 71.52, defaultPrice: 2500 },
+                { id: "g2x8_36", name: "เหล็กกล่องกัลวาไนซ์ 2\"x8\" (50x200 มม.) หนา 3.6 มม.", width: 50, height: 200, thickness: 3.6, weightPerMeter: 13.36, weightPerPiece: 80.16, defaultPrice: 2800 },
+                { id: "g2x8_40", name: "เหล็กกล่องกัลวาไนซ์ 2\"x8\" (50x200 มม.) หนา 4.0 มม.", width: 50, height: 200, thickness: 4.0, weightPerMeter: 14.77, weightPerPiece: 88.62, defaultPrice: 3100 }
+            ],
+            // เหล็กกล่องกัลวาไนซ์ ขนาดทั่วไป
+            "gi_box_other": [
+                { id: "g1x1_12", name: "เหล็กกล่อง 1\"x1\" (25x25 มม.) หนา 1.2 มม.", width: 25, height: 25, thickness: 1.2, weightPerMeter: 0.86, weightPerPiece: 5.16, defaultPrice: 180 },
+                { id: "g15x15_15", name: "เหล็กกล่อง 1.5\"x1.5\" (38x38 มม.) หนา 1.5 มม.", width: 38, height: 38, thickness: 1.5, weightPerMeter: 1.66, weightPerPiece: 9.96, defaultPrice: 350 },
+                { id: "g2x1_15", name: "เหล็กกล่อง 2\"x1\" (50x25 มม.) หนา 1.5 มม.", width: 25, height: 50, thickness: 1.5, weightPerMeter: 1.66, weightPerPiece: 9.96, defaultPrice: 350 },
+                { id: "g2x2_20", name: "เหล็กกล่อง 2\"x2\" (50x50 มม.) หนา 2.0 มม.", width: 50, height: 50, thickness: 2.0, weightPerMeter: 2.86, weightPerPiece: 17.16, defaultPrice: 600 },
+                { id: "g4x2_20", name: "เหล็กกล่อง 4\"x2\" (100x50 มม.) หนา 2.0 มม.", width: 50, height: 100, thickness: 2.0, weightPerMeter: 4.43, weightPerPiece: 26.58, defaultPrice: 930 },
+                { id: "g4x4_32", name: "เหล็กกล่อง 4\"x4\" (100x100 มม.) หนา 3.2 มม.", width: 100, height: 100, thickness: 3.2, weightPerMeter: 9.41, weightPerPiece: 56.46, defaultPrice: 1980 }
+            ],
+            "pipe_round": [
+                { id: "pr_1in_15", name: "ท่อกลมกัลวาไนซ์ 1 นิ้ว หนา 1.5 มม.", width: 33.4, height: 33.4, thickness: 1.5, weightPerMeter: 1.18, weightPerPiece: 7.08, defaultPrice: 250 },
+                { id: "pr_2in_20", name: "ท่อกลมกัลวาไนซ์ 2 นิ้ว หนา 2.0 มม.", width: 60.3, height: 60.3, thickness: 2.0, weightPerMeter: 2.88, weightPerPiece: 17.28, defaultPrice: 610 }
+            ],
+            "c_channel": [
+                { id: "c_100_20", name: "เหล็กตัวซี C-100x50x20 หนา 2.0 มม.", width: 50, height: 100, thickness: 2.0, weightPerMeter: 3.88, weightPerPiece: 23.28, defaultPrice: 820 },
+                { id: "c_150_32", name: "เหล็กตัวซี C-150x50x20 หนา 3.2 มม.", width: 50, height: 150, thickness: 3.2, weightPerMeter: 7.04, weightPerPiece: 42.24, defaultPrice: 1480 }
+            ]
+        };
+
+        // State Store สำหรับ BOQ Items
+        let boqItems = [];
+        let currentTabCategory = 'gi_box_2x6';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initCategorySelect();
+            renderQuickTable('gi_box_2x6');
+            updateBOQTable();
+
+            // Event Listener สำหรับเปลี่ยน Category
+            document.getElementById('steel-category').addEventListener('change', (e) => {
+                populateSpecOptions(e.target.value);
+            });
+
+            // Event Listener สำหรับเปลี่ยน Specification
+            document.getElementById('steel-spec').addEventListener('change', updateSpecInfo);
+
+            // Form Submit Event
+            document.getElementById('add-boq-form').addEventListener('submit', handleAddBOQ);
+        });
+
+        function initCategorySelect() {
+            const categorySelect = document.getElementById('steel-category');
+            populateSpecOptions(categorySelect.value);
+        }
+
+        function populateSpecOptions(categoryKey) {
+            const specSelect = document.getElementById('steel-spec');
+            specSelect.innerHTML = '';
+
+            const items = STEEL_DATABASE[categoryKey] || [];
+            items.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.id;
+                opt.textContent = `${item.name} (${item.weightPerPiece.toFixed(2)} กก./ท่อน)`;
+                specSelect.appendChild(opt);
+            });
+
+            updateSpecInfo();
+        }
+
+        function updateSpecInfo() {
+            const categoryKey = document.getElementById('steel-category').value;
+            const specId = document.getElementById('steel-spec').value;
+            const items = STEEL_DATABASE[categoryKey] || [];
+            const item = items.find(i => i.id === specId);
+
+            if (item) {
+                document.getElementById('preview-weight').textContent = `${item.weightPerPiece.toFixed(2)} กก. (ความยาว 6 เมตร)`;
+                document.getElementById('preview-dim').textContent = `${item.width}x${item.height} มม. (หนา ${item.thickness} มม.)`;
+                document.getElementById('input-price').value = item.defaultPrice;
+            }
+        }
+
+        function switchTableTab(categoryKey) {
+            currentTabCategory = categoryKey;
+            
+            // Update Tab styles
+            ['tab-2x6', 'tab-2x8', 'tab-other'].forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) {
+                    btn.className = "px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200";
+                }
+            });
+
+            if (categoryKey === 'gi_box_2x6') {
+                document.getElementById('tab-2x6').className = "px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-sm";
+            } else if (categoryKey === 'gi_box_2x8') {
+                document.getElementById('tab-2x8').className = "px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-sm";
+            } else {
+                document.getElementById('tab-other').className = "px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-sm";
+            }
+
+            renderQuickTable(categoryKey);
+        }
+
+        function renderQuickTable(categoryKey) {
+            const tbody = document.getElementById('quick-spec-tbody');
+            tbody.innerHTML = '';
+
+            const items = STEEL_DATABASE[categoryKey] || [];
+            items.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 border-b border-slate-100";
+                tr.innerHTML = `
+                    <td class="px-3 py-2 font-medium text-slate-800">${item.thickness} มม.</td>
+                    <td class="px-3 py-2">${item.weightPerMeter.toFixed(2)}</td>
+                    <td class="px-3 py-2 font-semibold text-indigo-600">${item.weightPerPiece.toFixed(2)}</td>
+                    <td class="px-3 py-2 text-right">
+                        <button onclick="quickAddSpec('${categoryKey}', '${item.id}')" class="px-2 py-1 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded text-xs transition">
+                            <i class="fa-solid fa-plus"></i> เลือก
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function quickAddSpec(categoryKey, specId) {
+            document.getElementById('steel-category').value = categoryKey;
+            populateSpecOptions(categoryKey);
+            document.getElementById('steel-spec').value = specId;
+            updateSpecInfo();
+        }
+
+        function handleAddBOQ(e) {
+            e.preventDefault();
+
+            const categoryKey = document.getElementById('steel-category').value;
+            const specId = document.getElementById('steel-spec').value;
+            const qty = parseInt(document.getElementById('input-qty').value) || 1;
+            const price = parseFloat(document.getElementById('input-price').value) || 0;
+            const remark = document.getElementById('input-remark').value.trim();
+
+            const items = STEEL_DATABASE[categoryKey] || [];
+            const selectedSpec = items.find(i => i.id === specId);
+
+            if (!selectedSpec) return;
+
+            const boqItem = {
+                id: Date.now(),
+                specId: selectedSpec.id,
+                name: selectedSpec.name,
+                unitWeight: selectedSpec.weightPerPiece,
+                qty: qty,
+                pricePerPiece: price,
+                totalWeight: selectedSpec.weightPerPiece * qty,
+                totalPrice: price * qty,
+                remark: remark
+            };
+
+            boqItems.push(boqItem);
+            updateBOQTable();
+
+            // Reset inputs
+            document.getElementById('input-qty').value = 1;
+            document.getElementById('input-remark').value = '';
+        }
+
+        function removeBOQItem(id) {
+            boqItems = boqItems.filter(item => item.id !== id);
+            updateBOQTable();
+        }
+
+        function clearAllBOQ() {
+            if (boqItems.length === 0) return;
+            if (confirm('คุณต้องการล้างรายการเหล็กทั้งหมดใน BOQ หรือไม่?')) {
+                boqItems = [];
+                updateBOQTable();
+            }
+        }
+
+        function updateBOQTable() {
+            const tbody = document.getElementById('boq-tbody');
+            const emptyState = document.getElementById('empty-state');
+            tbody.innerHTML = '';
+
+            let totalQty = 0;
+            let totalWeight = 0;
+            let totalPrice = 0;
+
+            if (boqItems.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+
+                boqItems.forEach((item, index) => {
+                    totalQty += item.qty;
+                    totalWeight += item.totalWeight;
+                    totalPrice += item.totalPrice;
+
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-50";
+                    tr.innerHTML = `
+                        <td class="px-3 py-3 text-slate-400 font-medium">${index + 1}</td>
+                        <td class="px-3 py-3">
+                            <div class="font-semibold text-slate-800">${item.name}</div>
+                            ${item.remark ? `<div class="text-xs text-indigo-600"><i class="fa-solid fa-tag text-[10px]"></i> ${item.remark}</div>` : ''}
+                        </td>
+                        <td class="px-3 py-3 text-center font-medium">${item.qty}</td>
+                        <td class="px-3 py-3 text-right font-medium text-emerald-600">${item.totalWeight.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        <td class="px-3 py-3 text-right">${item.pricePerPiece.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        <td class="px-3 py-3 text-right font-bold text-slate-800">${item.totalPrice.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        <td class="px-3 py-3 text-center">
+                            <button onclick="removeBOQItem(${item.id})" class="text-rose-500 hover:text-rose-700 p-1 rounded hover:bg-rose-50 transition">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            // Update Summaries
+            document.getElementById('summary-total-qty').textContent = totalQty.toLocaleString();
+            document.getElementById('summary-total-weight').textContent = totalWeight.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('summary-total-price').textContent = totalPrice.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+            // Header Stats
+            document.getElementById('stat-items-count').textContent = boqItems.length;
+            document.getElementById('stat-total-weight').textContent = totalWeight.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('stat-total-price').textContent = totalPrice.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+
+        function exportToCSV() {
+            if (boqItems.length === 0) {
+                alert('ไม่มีรายการข้อมูลสำหรับส่งออก CSV');
+                return;
+            }
+
+            let csvContent = "\uFEFF"; // UTF-8 BOM
+            csvContent += "ลำดับ,รายการสเปกเหล็ก,จำนวน (ท่อน),น้ำหนักรวม (กก.),ราคา/ท่อน (บาท),ราคารวม (บาท),หมายเหตุ\n";
+
+            boqItems.forEach((item, idx) => {
+                const row = [
+                    idx + 1,
+                    `"${item.name}"`,
+                    item.qty,
+                    item.totalWeight.toFixed(2),
+                    item.pricePerPiece.toFixed(2),
+                    item.totalPrice.toFixed(2),
+                    `"${item.remark || ''}"`
+                ];
+                csvContent += row.join(",") + "\n";
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `Steel_BOQ_Export_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
