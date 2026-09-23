@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>โปรแกรมคำนวณและถอดแบบ BOQ งานเหล็ก (Steel & Materials BOQ Calculator)</title>
+    <title>ระบบคำนวณและถอดแบบ BOQ งานเหล็กครบวงจร (Complete Steel BOQ Calculator)</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts Prompt -->
@@ -34,8 +34,8 @@
             <div class="flex items-center space-x-3">
                 <i class="fa-solid fa-cubes-stacked text-amber-400 text-3xl"></i>
                 <div>
-                    <h1 class="text-xl sm:text-2xl font-bold">ระบบคำนวณถอดแบบเหล็ก & BOQ</h1>
-                    <p class="text-xs text-indigo-200">ระบบถอดแบบ คำนวณน้ำหนัก และประมาณราคาเหล็กกัลวาไนซ์ & เหล็กรูปพรรณ มอก.</p>
+                    <h1 class="text-xl sm:text-2xl font-bold">ระบบคำนวณถอดแบบเหล็ก & BOQ ครบวงจร</h1>
+                    <p class="text-xs text-indigo-200">คำนวณน้ำหนักและราคาเหล็กรูปพรรณ มอก. / เหล็กกัลวาไนซ์ ทุกประเภทแบบอัตโนมัติ</p>
                 </div>
             </div>
             <!-- Quick Stats Header Bar -->
@@ -73,51 +73,67 @@
                 <form id="add-boq-form" class="space-y-4">
                     <!-- Category Selection -->
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">หมวดหมู่เหล็ก</label>
-                        <select id="steel-category" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                            <option value="gi_box_2x6">เหล็กกล่องกัลวาไนซ์ 2"x6" (50x150 มม.)</option>
-                            <option value="gi_box_2x8">เหล็กกล่องกัลวาไนซ์ 2"x8" (50x200 มม.)</option>
-                            <option value="gi_box_other">เหล็กกล่องกัลวาไนซ์ ขนาดอื่น ๆ</option>
-                            <option value="pipe_round">ท่อเหล็กกลม / ท่อแป๊ป</option>
-                            <option value="c_channel">เหล็กตัวซี (C-Channel)</option>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">1. เลือกหมวดหมู่เหล็ก</label>
+                        <select id="steel-category" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <optgroup label="เหล็กกล่องกัลวาไนซ์ / เหล็กโครงสร้าง">
+                                <option value="gi_box_2x6" selected>เหล็กกล่องกัลวาไนซ์ 2"x6" (50x150 มม.)</option>
+                                <option value="gi_box_2x8">เหล็กกล่องกัลวาไนซ์ 2"x8" (50x200 มม.)</option>
+                                <option value="gi_box_square">เหล็กกล่องสี่เหลี่ยมจัตุรัส (Square Pipe)</option>
+                                <option value="gi_box_rect">เหล็กกล่องแบน / สี่เหลี่ยมผืนผ้า (Rectangular Pipe)</option>
+                            </optgroup>
+                            <optgroup label="เหล็กรูปพรรณโครงสร้าง (Structural Steel)">
+                                <option value="c_channel">เหล็กตัวซี (C-Channel)</option>
+                                <option value="pipe_round">ท่อเหล็กกลม / ท่อแป๊ป (Steel Pipe)</option>
+                                <option value="angle_bar">เหล็กฉาก (Angle Bar)</option>
+                                <option value="flat_bar">เหล็กแบน (Flat Bar)</option>
+                                <option value="wide_flange">เหล็กไวด์แฟลงจ์ / เอชบีม / ไอบีม (Wide Flange / H-Beam)</option>
+                            </optgroup>
+                            <optgroup label="เหล็กเส้นงานคอนกรีต (Rebar)">
+                                <option value="round_bar">เหล็กเส้นกลม (Round Bar - RB)</option>
+                                <option value="deformed_bar">เหล็กข้ออ้อย (Deformed Bar - DB)</option>
+                            </optgroup>
                         </select>
                     </div>
 
                     <!-- Size / Thickness Selection -->
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">ขนาดและความหนา (มม.)</label>
-                        <select id="steel-spec" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <label class="block text-sm font-medium text-slate-700 mb-1">2. ขนาดและความหนา (เลือกแล้วน้ำหนักจะขึ้นอัตโนมัติ)</label>
+                        <select id="steel-spec" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                             <!-- Populated via JavaScript -->
                         </select>
                     </div>
 
-                    <!-- Spec Details Preview -->
-                    <div id="spec-info" class="bg-indigo-50 border border-indigo-100 rounded-lg p-3 text-xs space-y-1 text-indigo-900">
-                        <div class="flex justify-between">
-                            <span class="text-slate-600">น้ำหนักประมาณ/ท่อน (6ม.):</span>
-                            <span id="preview-weight" class="font-semibold text-indigo-700">0.00 กก.</span>
+                    <!-- Spec Details Preview (อัตโนมัติ) -->
+                    <div id="spec-info" class="bg-indigo-50 border border-indigo-100 rounded-lg p-3 text-xs space-y-1.5 text-indigo-900">
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-600 font-medium">น้ำหนักอัตโนมัติ / ท่อน (6ม.):</span>
+                            <span id="preview-weight" class="font-bold text-sm text-indigo-700">0.00 กก.</span>
                         </div>
-                        <div class="flex justify-between">
-                            <span class="text-slate-600">สูตรพื้นที่หน้าตัดโดยประมาณ:</span>
-                            <span id="preview-dim" class="font-medium text-slate-700">-</span>
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-600">น้ำหนักเฉลี่ย / เมตร:</span>
+                            <span id="preview-weight-m" class="font-semibold text-slate-700">0.00 กก./ม.</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-600">มิติขนาด / ความหนา:</span>
+                            <span id="preview-dim" class="font-semibold text-slate-700">-</span>
                         </div>
                     </div>
 
                     <!-- Input Parameters (Quantity, Unit Price, Remark) -->
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">จำนวน (ท่อน / 6 ม.)</label>
-                            <input type="number" id="input-qty" min="1" value="1" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">จำนวน (ท่อน/เส้น 6ม.)</label>
+                            <input type="number" id="input-qty" min="1" value="1" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-semibold">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">ราคา/หน่วย (บาท)</label>
-                            <input type="number" id="input-price" step="0.01" placeholder="คำนวณอัตโนมัติ" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <input type="number" id="input-price" step="0.01" placeholder="คำนวณอัตโนมัติ" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-semibold text-indigo-700">
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">หมายเหตุ / สเปกตำแหน่งที่ใช้</label>
-                        <input type="text" id="input-remark" placeholder="เช่น คานโครงหลังคา, เสาโชว์ชั้น 1" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <label class="block text-sm font-medium text-slate-700 mb-1">หมายเหตุ / ตำแหน่งโครงสร้างที่ใช้</label>
+                        <input type="text" id="input-remark" placeholder="เช่น คานโครงหลังคา, เสาโชว์, เหล็กอะเส" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                     </div>
 
                     <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-4 rounded-lg shadow transition flex items-center justify-center gap-2">
@@ -130,27 +146,29 @@
             <div class="bg-white rounded-xl shadow-md p-5 border border-slate-200">
                 <h2 class="text-lg font-semibold text-slate-800 mb-3 flex items-center justify-between border-b pb-2">
                     <span class="flex items-center gap-2">
-                        <i class="fa-solid fa-table text-indigo-600"></i> ตารางพิกัดน้ำหนักเหล็ก มอก./กัลวาไนซ์
+                        <i class="fa-solid fa-table text-indigo-600"></i> ตารางสเปกน้ำหนักเหล็กตามหมวดหมู่
                     </span>
-                    <span class="text-xs text-indigo-600 font-normal">ความยาว 6 เมตร/ท่อน</span>
+                    <span class="text-xs text-indigo-600 font-normal">ความยาว 6 เมตร</span>
                 </h2>
                 
-                <div class="mb-3">
-                    <div class="flex gap-2">
-                        <button type="button" id="tab-2x6" onclick="switchTableTab('gi_box_2x6')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-sm">2"x6" (50x150)</button>
-                        <button type="button" id="tab-2x8" onclick="switchTableTab('gi_box_2x8')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200">2"x8" (50x200)</button>
-                        <button type="button" id="tab-other" onclick="switchTableTab('gi_box_other')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200">ขนาดอื่น ๆ</button>
+                <div class="mb-3 overflow-x-auto pb-1">
+                    <div class="flex gap-1.5 min-w-max">
+                        <button type="button" id="tab-gi_box_2x6" onclick="switchTableTab('gi_box_2x6')" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-sm">2"x6"</button>
+                        <button type="button" id="tab-gi_box_2x8" onclick="switchTableTab('gi_box_2x8')" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200">2"x8"</button>
+                        <button type="button" id="tab-gi_box_square" onclick="switchTableTab('gi_box_square')" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200">กล่องจัตุรัส</button>
+                        <button type="button" id="tab-c_channel" onclick="switchTableTab('c_channel')" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200">เหล็กตัวซี</button>
+                        <button type="button" id="tab-angle_bar" onclick="switchTableTab('angle_bar')" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200">เหล็กฉาก</button>
                     </div>
                 </div>
 
                 <div class="overflow-x-auto max-h-64 border rounded-lg">
                     <table class="w-full text-xs text-left text-slate-600">
-                        <thead class="text-xs text-slate-700 uppercase bg-slate-100 sticky top-0">
+                        <thead class="text-xs text-slate-700 uppercase bg-slate-100 sticky top-0 border-b">
                             <tr>
-                                <th scope="col" class="px-3 py-2">ความหนา (มม.)</th>
-                                <th scope="col" class="px-3 py-2">น้ำหนัก/เมตร (กก.)</th>
-                                <th scope="col" class="px-3 py-2">น้ำหนัก/ท่อน 6m (กก.)</th>
-                                <th scope="col" class="px-3 py-2 text-right">แอคชั่น</th>
+                                <th scope="col" class="px-3 py-2">สเปก / ขนาด</th>
+                                <th scope="col" class="px-3 py-2">กก./ม.</th>
+                                <th scope="col" class="px-3 py-2">กก./ท่อน (6m)</th>
+                                <th scope="col" class="px-3 py-2 text-right">เลือก</th>
                             </tr>
                         </thead>
                         <tbody id="quick-spec-tbody" class="divide-y divide-slate-100">
@@ -171,7 +189,7 @@
                         <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
                             <i class="fa-solid fa-file-invoice-dollar text-emerald-600"></i> ตารางรายการ BOQ ถอดแบบ
                         </h2>
-                        <p class="text-xs text-slate-500">ตารางสรุปรายการเหล็กทั้งหมดที่เลือกไว้สำหรับใช้งาน</p>
+                        <p class="text-xs text-slate-500">รายการสรุปเหล็กทั้งหมดที่เลือกไว้สำหรับคำนวณสั่งซื้อและประมาณการราคา</p>
                     </div>
                     <div class="flex items-center gap-2 w-full sm:w-auto">
                         <button onclick="clearAllBOQ()" class="text-xs text-rose-600 hover:text-rose-800 px-3 py-2 border border-rose-200 hover:border-rose-300 rounded-lg bg-rose-50 transition">
@@ -194,7 +212,7 @@
                                 <th class="px-3 py-3 text-right">น.น. รวม (กก.)</th>
                                 <th class="px-3 py-3 text-right">ราคา/ท่อน (฿)</th>
                                 <th class="px-3 py-3 text-right">ราคารวม (฿)</th>
-                                <th class="px-3 py-3 text-center">การจัดการ</th>
+                                <th class="px-3 py-3 text-center">จัดการ</th>
                             </tr>
                         </thead>
                         <tbody id="boq-tbody" class="divide-y divide-slate-100">
@@ -215,7 +233,7 @@
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div class="bg-white p-3 rounded-lg border border-slate-200">
                             <span class="text-xs text-slate-500 block">จํานวนรวมทั้งสิ้น</span>
-                            <span id="summary-total-qty" class="text-lg font-bold text-slate-800">0</span> <span class="text-xs text-slate-500">ท่อน</span>
+                            <span id="summary-total-qty" class="text-lg font-bold text-slate-800">0</span> <span class="text-xs text-slate-500">ท่อน/เส้น</span>
                         </div>
                         <div class="bg-white p-3 rounded-lg border border-slate-200">
                             <span class="text-xs text-slate-500 block">น้ำหนักรวมทั้งสิ้น</span>
@@ -237,13 +255,11 @@
     <!-- JavaScript Section -->
     <script>
         /**
-         * STEEL_DATABASE: ฐานข้อมูลรายการเหล็ก
-         * น้ำหนักต่อท่อน (6 เมตร) คำนวณจากสูตรมาตรฐานวิศวกรรมโครงสร้างเหล็ก:
-         * ความหนาแน่นเหล็ก = 7850 กก./ลบ.ม.
-         * เพิ่มความหนาเหล็กกล่อง 2"x6" (50x150 มม.) และ 2"x8" (50x200 มม.) ครบทุกขนาด 1.2 - 4.0 มม.
+         * STEEL_DATABASE: ฐานข้อมูลรายการเหล็กทุกประเภทอย่างสมบูรณ์
+         * คำนวณน้ำหนักต่อท่อน (ความยาวมาตรฐาน 6 เมตร) ตามสูตรมาตรฐานวิศวกรรมโครงสร้างเหล็ก มอก.
          */
         const STEEL_DATABASE = {
-            // เหล็กกล่องกัลวาไนซ์ 2"x6" (50 x 150 มม.)
+            // 1. เหล็กกล่องกัลวาไนซ์ 2"x6" (50 x 150 มม.)
             "gi_box_2x6": [
                 { id: "g2x6_12", name: "เหล็กกล่องกัลวาไนซ์ 2\"x6\" (50x150 มม.) หนา 1.2 มม.", width: 50, height: 150, thickness: 1.2, weightPerMeter: 3.65, weightPerPiece: 21.90, defaultPrice: 780 },
                 { id: "g2x6_14", name: "เหล็กกล่องกัลวาไนซ์ 2\"x6\" (50x150 มม.) หนา 1.4 มม.", width: 50, height: 150, thickness: 1.4, weightPerMeter: 4.24, weightPerPiece: 25.44, defaultPrice: 890 },
@@ -259,7 +275,7 @@
                 { id: "g2x6_36", name: "เหล็กกล่องกัลวาไนซ์ 2\"x6\" (50x150 มม.) หนา 3.6 มม.", width: 50, height: 150, thickness: 3.6, weightPerMeter: 10.53, weightPerPiece: 63.18, defaultPrice: 2210 },
                 { id: "g2x6_40", name: "เหล็กกล่องกัลวาไนซ์ 2\"x6\" (50x150 มม.) หนา 4.0 มม.", width: 50, height: 150, thickness: 4.0, weightPerMeter: 11.63, weightPerPiece: 69.78, defaultPrice: 2440 }
             ],
-            // เหล็กกล่องกัลวาไนซ์ 2"x8" (50 x 200 มม.)
+            // 2. เหล็กกล่องกัลวาไนซ์ 2"x8" (50 x 200 มม.)
             "gi_box_2x8": [
                 { id: "g2x8_12", name: "เหล็กกล่องกัลวาไนซ์ 2\"x8\" (50x200 มม.) หนา 1.2 มม.", width: 50, height: 200, thickness: 1.2, weightPerMeter: 4.59, weightPerPiece: 27.54, defaultPrice: 960 },
                 { id: "g2x8_14", name: "เหล็กกล่องกัลวาไนซ์ 2\"x8\" (50x200 มม.) หนา 1.4 มม.", width: 50, height: 200, thickness: 1.4, weightPerMeter: 5.34, weightPerPiece: 32.04, defaultPrice: 1120 },
@@ -275,26 +291,122 @@
                 { id: "g2x8_36", name: "เหล็กกล่องกัลวาไนซ์ 2\"x8\" (50x200 มม.) หนา 3.6 มม.", width: 50, height: 200, thickness: 3.6, weightPerMeter: 13.36, weightPerPiece: 80.16, defaultPrice: 2800 },
                 { id: "g2x8_40", name: "เหล็กกล่องกัลวาไนซ์ 2\"x8\" (50x200 มม.) หนา 4.0 มม.", width: 50, height: 200, thickness: 4.0, weightPerMeter: 14.77, weightPerPiece: 88.62, defaultPrice: 3100 }
             ],
-            // เหล็กกล่องกัลวาไนซ์ ขนาดทั่วไป
-            "gi_box_other": [
-                { id: "g1x1_12", name: "เหล็กกล่อง 1\"x1\" (25x25 มม.) หนา 1.2 มม.", width: 25, height: 25, thickness: 1.2, weightPerMeter: 0.86, weightPerPiece: 5.16, defaultPrice: 180 },
-                { id: "g15x15_15", name: "เหล็กกล่อง 1.5\"x1.5\" (38x38 มม.) หนา 1.5 มม.", width: 38, height: 38, thickness: 1.5, weightPerMeter: 1.66, weightPerPiece: 9.96, defaultPrice: 350 },
-                { id: "g2x1_15", name: "เหล็กกล่อง 2\"x1\" (50x25 มม.) หนา 1.5 มม.", width: 25, height: 50, thickness: 1.5, weightPerMeter: 1.66, weightPerPiece: 9.96, defaultPrice: 350 },
-                { id: "g2x2_20", name: "เหล็กกล่อง 2\"x2\" (50x50 มม.) หนา 2.0 มม.", width: 50, height: 50, thickness: 2.0, weightPerMeter: 2.86, weightPerPiece: 17.16, defaultPrice: 600 },
-                { id: "g4x2_20", name: "เหล็กกล่อง 4\"x2\" (100x50 มม.) หนา 2.0 มม.", width: 50, height: 100, thickness: 2.0, weightPerMeter: 4.43, weightPerPiece: 26.58, defaultPrice: 930 },
-                { id: "g4x4_32", name: "เหล็กกล่อง 4\"x4\" (100x100 มม.) หนา 3.2 มม.", width: 100, height: 100, thickness: 3.2, weightPerMeter: 9.41, weightPerPiece: 56.46, defaultPrice: 1980 }
+            // 3. เหล็กกล่องสี่เหลี่ยมจัตุรัส (Square Pipe)
+            "gi_box_square": [
+                { id: "sq_1x1_12", name: "เหล็กกล่อง 3/4\"x3/4\" (19x19 มม.) หนา 1.2 มม.", width: 19, height: 19, thickness: 1.2, weightPerMeter: 0.65, weightPerPiece: 3.90, defaultPrice: 140 },
+                { id: "sq_1in_12", name: "เหล็กกล่อง 1\"x1\" (25x25 มม.) หนา 1.2 มม.", width: 25, height: 25, thickness: 1.2, weightPerMeter: 0.86, weightPerPiece: 5.16, defaultPrice: 180 },
+                { id: "sq_1in_16", name: "เหล็กกล่อง 1\"x1\" (25x25 มม.) หนา 1.6 มม.", width: 25, height: 25, thickness: 1.6, weightPerMeter: 1.12, weightPerPiece: 6.72, defaultPrice: 235 },
+                { id: "sq_12in_15", name: "เหล็กกล่อง 1.2\"x1.2\" (30x30 มม.) หนา 1.5 มม.", width: 30, height: 30, thickness: 1.5, weightPerMeter: 1.29, weightPerPiece: 7.74, defaultPrice: 270 },
+                { id: "sq_15in_15", name: "เหล็กกล่อง 1.5\"x1.5\" (38x38 มม.) หนา 1.5 มม.", width: 38, height: 38, thickness: 1.5, weightPerMeter: 1.66, weightPerPiece: 9.96, defaultPrice: 350 },
+                { id: "sq_15in_20", name: "เหล็กกล่อง 1.5\"x1.5\" (38x38 มม.) หนา 2.0 มม.", width: 38, height: 38, thickness: 2.0, weightPerMeter: 2.17, weightPerPiece: 13.02, defaultPrice: 450 },
+                { id: "sq_2in_15", name: "เหล็กกล่อง 2\"x2\" (50x50 มม.) หนา 1.5 มม.", width: 50, height: 50, thickness: 1.5, weightPerMeter: 2.22, weightPerPiece: 13.32, defaultPrice: 470 },
+                { id: "sq_2in_20", name: "เหล็กกล่อง 2\"x2\" (50x50 มม.) หนา 2.0 มม.", width: 50, height: 50, thickness: 2.0, weightPerMeter: 2.86, weightPerPiece: 17.16, defaultPrice: 600 },
+                { id: "sq_2in_32", name: "เหล็กกล่อง 2\"x2\" (50x50 มม.) หนา 3.2 มม.", width: 50, height: 50, thickness: 3.2, weightPerMeter: 4.39, weightPerPiece: 26.34, defaultPrice: 920 },
+                { id: "sq_3in_20", name: "เหล็กกล่อง 3\"x3\" (75x75 มม.) หนา 2.0 มม.", width: 75, height: 75, thickness: 2.0, weightPerMeter: 4.43, weightPerPiece: 26.58, defaultPrice: 930 },
+                { id: "sq_3in_32", name: "เหล็กกล่อง 3\"x3\" (75x75 มม.) หนา 3.2 มม.", width: 75, height: 75, thickness: 3.2, weightPerMeter: 6.90, weightPerPiece: 41.40, defaultPrice: 1450 },
+                { id: "sq_4in_20", name: "เหล็กกล่อง 4\"x4\" (100x100 มม.) หนา 2.0 มม.", width: 100, height: 100, thickness: 2.0, weightPerMeter: 6.00, weightPerPiece: 36.00, defaultPrice: 1260 },
+                { id: "sq_4in_32", name: "เหล็กกล่อง 4\"x4\" (100x100 มม.) หนา 3.2 มม.", width: 100, height: 100, thickness: 3.2, weightPerMeter: 9.41, weightPerPiece: 56.46, defaultPrice: 1980 },
+                { id: "sq_5in_32", name: "เหล็กกล่อง 5\"x5\" (125x125 มม.) หนา 3.2 มม.", width: 125, height: 125, thickness: 3.2, weightPerMeter: 11.92, weightPerPiece: 71.52, defaultPrice: 2500 },
+                { id: "sq_6in_40", name: "เหล็กกล่อง 6\"x6\" (150x150 มม.) หนา 4.0 มม.", width: 150, height: 150, thickness: 4.0, weightPerMeter: 17.91, weightPerPiece: 107.46, defaultPrice: 3760 }
             ],
-            "pipe_round": [
-                { id: "pr_1in_15", name: "ท่อกลมกัลวาไนซ์ 1 นิ้ว หนา 1.5 มม.", width: 33.4, height: 33.4, thickness: 1.5, weightPerMeter: 1.18, weightPerPiece: 7.08, defaultPrice: 250 },
-                { id: "pr_2in_20", name: "ท่อกลมกัลวาไนซ์ 2 นิ้ว หนา 2.0 มม.", width: 60.3, height: 60.3, thickness: 2.0, weightPerMeter: 2.88, weightPerPiece: 17.28, defaultPrice: 610 }
+            // 4. เหล็กกล่องแบน / สี่เหลี่ยมผืนผ้า (Rectangular Pipe)
+            "gi_box_rect": [
+                { id: "rec_2x1_12", name: "เหล็กกล่อง 2\"x1\" (50x25 มม.) หนา 1.2 มม.", width: 25, height: 50, thickness: 1.2, weightPerMeter: 1.33, weightPerPiece: 7.98, defaultPrice: 280 },
+                { id: "rec_2x1_15", name: "เหล็กกล่อง 2\"x1\" (50x25 มม.) หนา 1.5 มม.", width: 25, height: 50, thickness: 1.5, weightPerMeter: 1.66, weightPerPiece: 9.96, defaultPrice: 350 },
+                { id: "rec_2x1_20", name: "เหล็กกล่อง 2\"x1\" (50x25 มม.) หนา 2.0 มม.", width: 25, height: 50, thickness: 2.0, weightPerMeter: 2.17, weightPerPiece: 13.02, defaultPrice: 450 },
+                { id: "rec_3x15_15", name: "เหล็กกล่อง 3\"x1.5\" (75x38 มม.) หนา 1.5 มม.", width: 38, height: 75, thickness: 1.5, weightPerMeter: 2.51, weightPerPiece: 15.06, defaultPrice: 530 },
+                { id: "rec_3x15_20", name: "เหล็กกล่อง 3\"x1.5\" (75x38 มม.) หนา 2.0 มม.", width: 38, height: 75, thickness: 2.0, weightPerMeter: 3.33, weightPerPiece: 19.98, defaultPrice: 700 },
+                { id: "rec_4x2_16", name: "เหล็กกล่อง 4\"x2\" (100x50 มม.) หนา 1.6 มม.", width: 50, height: 100, thickness: 1.6, weightPerMeter: 3.57, weightPerPiece: 21.42, defaultPrice: 750 },
+                { id: "rec_4x2_20", name: "เหล็กกล่อง 4\"x2\" (100x50 มม.) หนา 2.0 มม.", width: 50, height: 100, thickness: 2.0, weightPerMeter: 4.43, weightPerPiece: 26.58, defaultPrice: 930 },
+                { id: "rec_4x2_32", name: "เหล็กกล่อง 4\"x2\" (100x50 มม.) หนา 3.2 มม.", width: 50, height: 100, thickness: 3.2, weightPerMeter: 6.90, weightPerPiece: 41.40, defaultPrice: 1450 },
+                { id: "rec_5x3_32", name: "เหล็กกล่อง 5\"x3\" (125x75 มม.) หนา 3.2 มม.", width: 75, height: 125, thickness: 3.2, weightPerMeter: 9.41, weightPerPiece: 56.46, defaultPrice: 1980 },
+                { id: "rec_6x3_32", name: "เหล็กกล่อง 6\"x3\" (150x75 มม.) หนา 3.2 มม.", width: 75, height: 150, thickness: 3.2, weightPerMeter: 10.66, weightPerPiece: 63.96, defaultPrice: 2240 },
+                { id: "rec_6x4_40", name: "เหล็กกล่อง 6\"x4\" (150x100 มม.) หนา 4.0 มม.", width: 100, height: 150, thickness: 4.0, weightPerMeter: 14.77, weightPerPiece: 88.62, defaultPrice: 3100 }
             ],
+            // 5. เหล็กตัวซี (C-Channel)
             "c_channel": [
-                { id: "c_100_20", name: "เหล็กตัวซี C-100x50x20 หนา 2.0 มม.", width: 50, height: 100, thickness: 2.0, weightPerMeter: 3.88, weightPerPiece: 23.28, defaultPrice: 820 },
-                { id: "c_150_32", name: "เหล็กตัวซี C-150x50x20 หนา 3.2 มม.", width: 50, height: 150, thickness: 3.2, weightPerMeter: 7.04, weightPerPiece: 42.24, defaultPrice: 1480 }
+                { id: "c_60_16", name: "เหล็กตัวซี C-60x30x10 มม. หนา 1.6 มม.", width: 30, height: 60, thickness: 1.6, weightPerMeter: 1.63, weightPerPiece: 9.78, defaultPrice: 340 },
+                { id: "c_75_16", name: "เหล็กตัวซี C-75x45x15 มม. หนา 1.6 มม.", width: 45, height: 75, thickness: 1.6, weightPerMeter: 2.33, weightPerPiece: 13.98, defaultPrice: 490 },
+                { id: "c_75_20", name: "เหล็กตัวซี C-75x45x15 มม. หนา 2.0 มม.", width: 45, height: 75, thickness: 2.0, weightPerMeter: 2.87, weightPerPiece: 17.22, defaultPrice: 600 },
+                { id: "c_100_16", name: "เหล็กตัวซี C-100x50x20 มม. หนา 1.6 มม.", width: 50, height: 100, thickness: 1.6, weightPerMeter: 3.13, weightPerPiece: 18.78, defaultPrice: 660 },
+                { id: "c_100_20", name: "เหล็กตัวซี C-100x50x20 มม. หนา 2.0 มม.", width: 50, height: 100, thickness: 2.0, weightPerMeter: 3.88, weightPerPiece: 23.28, defaultPrice: 820 },
+                { id: "c_100_23", name: "เหล็กตัวซี C-100x50x20 มม. หนา 2.3 มม.", width: 50, height: 100, thickness: 2.3, weightPerMeter: 4.43, weightPerPiece: 26.58, defaultPrice: 930 },
+                { id: "c_100_32", name: "เหล็กตัวซี C-100x50x20 มม. หนา 3.2 มม.", width: 50, height: 100, thickness: 3.2, weightPerMeter: 6.02, weightPerPiece: 36.12, defaultPrice: 1260 },
+                { id: "c_125_23", name: "เหล็กตัวซี C-125x50x20 มม. หนา 2.3 มม.", width: 50, height: 125, thickness: 2.3, weightPerMeter: 4.88, weightPerPiece: 29.28, defaultPrice: 1020 },
+                { id: "c_125_32", name: "เหล็กตัวซี C-125x50x20 มม. หนา 3.2 มม.", width: 50, height: 125, thickness: 3.2, weightPerMeter: 6.65, weightPerPiece: 39.90, defaultPrice: 1400 },
+                { id: "c_150_23", name: "เหล็กตัวซี C-150x50x20 มม. หนา 2.3 มม.", width: 50, height: 150, thickness: 2.3, weightPerMeter: 5.33, weightPerPiece: 31.98, defaultPrice: 1120 },
+                { id: "c_150_32", name: "เหล็กตัวซี C-150x50x20 มม. หนา 3.2 มม.", width: 50, height: 150, thickness: 3.2, weightPerMeter: 7.28, weightPerPiece: 43.68, defaultPrice: 1530 },
+                { id: "c_200_32", name: "เหล็กตัวซี C-200x75x20 มม. หนา 3.2 มม.", width: 75, height: 200, thickness: 3.2, weightPerMeter: 9.79, weightPerPiece: 58.74, defaultPrice: 2050 }
+            ],
+            // 6. ท่อเหล็กกลม / ท่อแป๊ป (Steel Pipe)
+            "pipe_round": [
+                { id: "pr_05in_15", name: "ท่อกลม 1/2 นิ้ว (15มม.) หนา 1.5 มม.", width: 21.7, height: 21.7, thickness: 1.5, weightPerMeter: 0.75, weightPerPiece: 4.50, defaultPrice: 160 },
+                { id: "pr_075in_15", name: "ท่อกลม 3/4 นิ้ว (20มม.) หนา 1.5 มม.", width: 27.2, height: 27.2, thickness: 1.5, weightPerMeter: 0.95, weightPerPiece: 5.70, defaultPrice: 200 },
+                { id: "pr_1in_15", name: "ท่อกลม 1 นิ้ว (25มม.) หนา 1.5 มม.", width: 34.0, height: 34.0, thickness: 1.5, weightPerMeter: 1.20, weightPerPiece: 7.20, defaultPrice: 250 },
+                { id: "pr_1in_20", name: "ท่อกลม 1 นิ้ว (25มม.) หนา 2.0 มม.", width: 34.0, height: 34.0, thickness: 2.0, weightPerMeter: 1.58, weightPerPiece: 9.48, defaultPrice: 330 },
+                { id: "pr_125in_18", name: "ท่อกลม 1.25 นิ้ว (32มม.) หนา 1.8 มม.", width: 42.7, height: 42.7, thickness: 1.8, weightPerMeter: 1.81, weightPerPiece: 10.86, defaultPrice: 380 },
+                { id: "pr_15in_20", name: "ท่อกลม 1.5 นิ้ว (40มม.) หนา 2.0 มม.", width: 48.6, height: 48.6, thickness: 2.0, weightPerMeter: 2.30, weightPerPiece: 13.80, defaultPrice: 480 },
+                { id: "pr_2in_20", name: "ท่อกลม 2 นิ้ว (50มม.) หนา 2.0 มม.", width: 60.5, height: 60.5, thickness: 2.0, weightPerMeter: 2.88, weightPerPiece: 17.28, defaultPrice: 610 },
+                { id: "pr_2in_32", name: "ท่อกลม 2 นิ้ว (50มม.) หนา 3.2 มม.", width: 60.5, height: 60.5, thickness: 3.2, weightPerMeter: 4.52, weightPerPiece: 27.12, defaultPrice: 950 },
+                { id: "pr_25in_23", name: "ท่อกลม 2.5 นิ้ว (65มม.) หนา 2.3 มม.", width: 76.3, height: 76.3, thickness: 2.3, weightPerMeter: 4.19, weightPerPiece: 25.14, defaultPrice: 880 },
+                { id: "pr_3in_23", name: "ท่อกลม 3 นิ้ว (80มม.) หนา 2.3 มม.", width: 89.1, height: 89.1, thickness: 2.3, weightPerMeter: 4.92, weightPerPiece: 29.52, defaultPrice: 1030 },
+                { id: "pr_3in_32", name: "ท่อกลม 3 นิ้ว (80มม.) หนา 3.2 มม.", width: 89.1, height: 89.1, thickness: 3.2, weightPerMeter: 6.78, weightPerPiece: 40.68, defaultPrice: 1420 },
+                { id: "pr_4in_32", name: "ท่อกลม 4 นิ้ว (100มม.) หนา 3.2 มม.", width: 114.3, height: 114.3, thickness: 3.2, weightPerMeter: 8.77, weightPerPiece: 52.62, defaultPrice: 1840 }
+            ],
+            // 7. เหล็กฉาก (Angle Bar)
+            "angle_bar": [
+                { id: "ang_25_30", name: "เหล็กฉาก L-25x25 มม. หนา 3.0 มม.", width: 25, height: 25, thickness: 3.0, weightPerMeter: 1.12, weightPerPiece: 6.72, defaultPrice: 235 },
+                { id: "ang_30_30", name: "เหล็กฉาก L-30x30 มม. หนา 3.0 มม.", width: 30, height: 30, thickness: 3.0, weightPerMeter: 1.36, weightPerPiece: 8.16, defaultPrice: 285 },
+                { id: "ang_40_30", name: "เหล็กฉาก L-40x40 มม. หนา 3.0 มม.", width: 40, height: 40, thickness: 3.0, weightPerMeter: 1.83, weightPerPiece: 10.98, defaultPrice: 385 },
+                { id: "ang_40_40", name: "เหล็กฉาก L-40x40 มม. หนา 4.0 มม.", width: 40, height: 40, thickness: 4.0, weightPerMeter: 2.42, weightPerPiece: 14.52, defaultPrice: 510 },
+                { id: "ang_50_40", name: "เหล็กฉาก L-50x50 มม. หนา 4.0 มม.", width: 50, height: 50, thickness: 4.0, weightPerMeter: 3.06, weightPerPiece: 18.36, defaultPrice: 640 },
+                { id: "ang_50_50", name: "เหล็กฉาก L-50x50 มม. หนา 5.0 มม.", width: 50, height: 50, thickness: 5.0, weightPerMeter: 3.77, weightPerPiece: 22.62, defaultPrice: 790 },
+                { id: "ang_65_60", name: "เหล็กฉาก L-65x65 มม. หนา 6.0 มม.", width: 65, height: 65, thickness: 6.0, weightPerMeter: 5.91, weightPerPiece: 35.46, defaultPrice: 1240 },
+                { id: "ang_75_60", name: "เหล็กฉาก L-75x75 มม. หนา 6.0 มม.", width: 75, height: 75, thickness: 6.0, weightPerMeter: 6.85, weightPerPiece: 41.10, defaultPrice: 1440 },
+                { id: "ang_100_70", name: "เหล็กฉาก L-100x100 มม. หนา 7.0 มม.", width: 100, height: 100, thickness: 7.0, weightPerMeter: 10.70, weightPerPiece: 64.20, defaultPrice: 2250 },
+                { id: "ang_100_100", name: "เหล็กฉาก L-100x100 มม. หนา 10.0 มม.", width: 100, height: 100, thickness: 10.0, weightPerMeter: 14.90, weightPerPiece: 89.40, defaultPrice: 3130 }
+            ],
+            // 8. เหล็กแบน (Flat Bar)
+            "flat_bar": [
+                { id: "fb_25_30", name: "เหล็กแบน 1 นิ้ว (25 มม.) หนา 3 มม.", width: 25, height: 3, thickness: 3.0, weightPerMeter: 0.59, weightPerPiece: 3.54, defaultPrice: 125 },
+                { id: "fb_25_60", name: "เหล็กแบน 1 นิ้ว (25 มม.) หนา 6 มม.", width: 25, height: 6, thickness: 6.0, weightPerMeter: 1.18, weightPerPiece: 7.08, defaultPrice: 250 },
+                { id: "fb_38_60", name: "เหล็กแบน 1.5 นิ้ว (38 มม.) หนา 6 มม.", width: 38, height: 6, thickness: 6.0, weightPerMeter: 1.79, weightPerPiece: 10.74, defaultPrice: 375 },
+                { id: "fb_50_60", name: "เหล็กแบน 2 นิ้ว (50 มม.) หนา 6 มม.", width: 50, height: 6, thickness: 6.0, weightPerMeter: 2.36, weightPerPiece: 14.16, defaultPrice: 495 },
+                { id: "fb_50_90", name: "เหล็กแบน 2 นิ้ว (50 มม.) หนา 9 มม.", width: 50, height: 9, thickness: 9.0, weightPerMeter: 3.53, weightPerPiece: 21.18, defaultPrice: 740 },
+                { id: "fb_75_60", name: "เหล็กแบน 3 นิ้ว (75 มม.) หนา 6 มม.", width: 75, height: 6, thickness: 6.0, weightPerMeter: 3.53, weightPerPiece: 21.18, defaultPrice: 740 },
+                { id: "fb_75_90", name: "เหล็กแบน 3 นิ้ว (75 มม.) หนา 9 มม.", width: 75, height: 9, thickness: 9.0, weightPerMeter: 5.30, weightPerPiece: 31.80, defaultPrice: 1110 },
+                { id: "fb_100_90", name: "เหล็กแบน 4 นิ้ว (100 มม.) หนา 9 มม.", width: 100, height: 9, thickness: 9.0, weightPerMeter: 7.07, weightPerPiece: 42.42, defaultPrice: 1480 }
+            ],
+            // 9. เหล็กไวด์แฟลงจ์ / เอชบีม / ไอบีม (Wide Flange / H-Beam)
+            "wide_flange": [
+                { id: "wf_100_100", name: "H-Beam 100x100x6x8 มม. (17.2 กก./ม.)", width: 100, height: 100, thickness: 8.0, weightPerMeter: 17.20, weightPerPiece: 103.20, defaultPrice: 3600 },
+                { id: "wf_125_125", name: "H-Beam 125x125x6.5x9 มม. (23.6 กก./ม.)", width: 125, height: 125, thickness: 9.0, weightPerMeter: 23.60, weightPerPiece: 141.60, defaultPrice: 4950 },
+                { id: "wf_150_150", name: "H-Beam 150x150x7x10 มม. (31.5 กก./ม.)", width: 150, height: 150, thickness: 10.0, weightPerMeter: 31.50, weightPerPiece: 189.00, defaultPrice: 6600 },
+                { id: "wf_200_100", name: "I-Beam / WF 200x100x5.5x8 มม. (21.3 กก./ม.)", width: 100, height: 200, thickness: 8.0, weightPerMeter: 21.30, weightPerPiece: 127.80, defaultPrice: 4470 },
+                { id: "wf_200_200", name: "H-Beam 200x200x8x12 มม. (49.9 กก./ม.)", width: 200, height: 200, thickness: 12.0, weightPerMeter: 49.90, weightPerPiece: 299.40, defaultPrice: 10480 },
+                { id: "wf_250_125", name: "WF 250x125x6x9 มม. (29.6 กก./ม.)", width: 125, height: 250, thickness: 9.0, weightPerMeter: 29.60, weightPerPiece: 177.60, defaultPrice: 6200 },
+                { id: "wf_300_150", name: "WF 300x150x6.5x9 มม. (36.7 กก./ม.)", width: 150, height: 300, thickness: 9.0, weightPerMeter: 36.70, weightPerPiece: 220.20, defaultPrice: 7700 }
+            ],
+            // 10. เหล็กเส้นกลม (Round Bar - RB)
+            "round_bar": [
+                { id: "rb_6", name: "เหล็กเส้นกลม RB6 (SR24) 6 มม. (ความยาว 10 เมตร)", width: 6, height: 6, thickness: 6.0, weightPerMeter: 0.222, weightPerPiece: 2.22, defaultPrice: 78 },
+                { id: "rb_9", name: "เหล็กเส้นกลม RB9 (SR24) 9 มม. (ความยาว 10 เมตร)", width: 9, height: 9, thickness: 9.0, weightPerMeter: 0.499, weightPerPiece: 4.99, defaultPrice: 175 },
+                { id: "rb_12", name: "เหล็กเส้นกลม RB12 (SR24) 12 มม. (ความยาว 10 เมตร)", width: 12, height: 12, thickness: 12.0, weightPerMeter: 0.888, weightPerPiece: 8.88, defaultPrice: 310 },
+                { id: "rb_15", name: "เหล็กเส้นกลม RB15 (SR24) 15 มม. (ความยาว 10 เมตร)", width: 15, height: 15, thickness: 15.0, weightPerMeter: 1.390, weightPerPiece: 13.90, defaultPrice: 485 },
+                { id: "rb_19", name: "เหล็กเส้นกลม RB19 (SR24) 19 มม. (ความยาว 10 เมตร)", width: 19, height: 19, thickness: 19.0, weightPerMeter: 2.230, weightPerPiece: 22.30, defaultPrice: 780 }
+            ],
+            // 11. เหล็กข้ออ้อย (Deformed Bar - DB)
+            "deformed_bar": [
+                { id: "db_10", name: "เหล็กข้ออ้อย DB10 (SD40) 10 มม. (ความยาว 10 เมตร)", width: 10, height: 10, thickness: 10.0, weightPerMeter: 0.617, weightPerPiece: 6.17, defaultPrice: 215 },
+                { id: "db_12", name: "เหล็กข้ออ้อย DB12 (SD40) 12 มม. (ความยาว 10 เมตร)", width: 12, height: 12, thickness: 12.0, weightPerMeter: 0.888, weightPerPiece: 8.88, defaultPrice: 310 },
+                { id: "db_16", name: "เหล็กข้ออ้อย DB16 (SD40) 16 มม. (ความยาว 10 เมตร)", width: 16, height: 16, thickness: 16.0, weightPerMeter: 1.580, weightPerPiece: 15.80, defaultPrice: 550 },
+                { id: "db_20", name: "เหล็กข้ออ้อย DB20 (SD40) 20 มม. (ความยาว 10 เมตร)", width: 20, height: 20, thickness: 20.0, weightPerMeter: 2.470, weightPerPiece: 24.70, defaultPrice: 865 },
+                { id: "db_25", name: "เหล็กข้ออ้อย DB25 (SD40) 25 มม. (ความยาว 10 เมตร)", width: 25, height: 25, thickness: 25.0, weightPerMeter: 3.850, weightPerPiece: 38.50, defaultPrice: 1350 },
+                { id: "db_32", name: "เหล็กข้ออ้อย DB32 (SD40) 32 มม. (ความยาว 10 เมตร)", width: 32, height: 32, thickness: 32.0, weightPerMeter: 6.310, weightPerPiece: 63.10, defaultPrice: 2210 }
             ]
         };
 
-        // State Store สำหรับ BOQ Items
+        // State Store สำหรับรายการ BOQ
         let boqItems = [];
         let currentTabCategory = 'gi_box_2x6';
 
@@ -303,12 +415,12 @@
             renderQuickTable('gi_box_2x6');
             updateBOQTable();
 
-            // Event Listener สำหรับเปลี่ยน Category
+            // Event Listener เมื่อมีการเปลี่ยนหมวดหมู่เหล็ก
             document.getElementById('steel-category').addEventListener('change', (e) => {
                 populateSpecOptions(e.target.value);
             });
 
-            // Event Listener สำหรับเปลี่ยน Specification
+            // Event Listener เมื่อมีการเปลี่ยนรายการขนาด/ความหนาเหล็ก
             document.getElementById('steel-spec').addEventListener('change', updateSpecInfo);
 
             // Form Submit Event
@@ -320,6 +432,7 @@
             populateSpecOptions(categorySelect.value);
         }
 
+        // โหลดรายการขนาดความหนาใส่ Dropdown อัตโนมัติ
         function populateSpecOptions(categoryKey) {
             const specSelect = document.getElementById('steel-spec');
             specSelect.innerHTML = '';
@@ -328,13 +441,14 @@
             items.forEach(item => {
                 const opt = document.createElement('option');
                 opt.value = item.id;
-                opt.textContent = `${item.name} (${item.weightPerPiece.toFixed(2)} กก./ท่อน)`;
+                opt.textContent = `${item.name} [${item.weightPerPiece.toFixed(2)} กก.]`;
                 specSelect.appendChild(opt);
             });
 
             updateSpecInfo();
         }
 
+        // แสดงผลน้ำหนักและมิติแบบเรียลไทม์เมื่อเปลี่ยนการเลือก
         function updateSpecInfo() {
             const categoryKey = document.getElementById('steel-category').value;
             const specId = document.getElementById('steel-spec').value;
@@ -342,34 +456,34 @@
             const item = items.find(i => i.id === specId);
 
             if (item) {
-                document.getElementById('preview-weight').textContent = `${item.weightPerPiece.toFixed(2)} กก. (ความยาว 6 เมตร)`;
-                document.getElementById('preview-dim').textContent = `${item.width}x${item.height} มม. (หนา ${item.thickness} มม.)`;
+                const unitLabel = (categoryKey === 'round_bar' || categoryKey === 'deformed_bar') ? 'ความยาว 10 เมตร' : 'ความยาว 6 เมตร';
+                document.getElementById('preview-weight').textContent = `${item.weightPerPiece.toFixed(2)} กก. (${unitLabel})`;
+                document.getElementById('preview-weight-m').textContent = `${item.weightPerMeter.toFixed(2)} กก./ม.`;
+                document.getElementById('preview-dim').textContent = `${item.width}x${item.height} มม. (ความหนา/สเปก ${item.thickness} มม.)`;
                 document.getElementById('input-price').value = item.defaultPrice;
             }
         }
 
+        // สลับแท็บตารางด่วน
         function switchTableTab(categoryKey) {
             currentTabCategory = categoryKey;
             
-            // Update Tab styles
-            ['tab-2x6', 'tab-2x8', 'tab-other'].forEach(id => {
-                const btn = document.getElementById(id);
+            ['gi_box_2x6', 'gi_box_2x8', 'gi_box_square', 'c_channel', 'angle_bar'].forEach(cat => {
+                const btn = document.getElementById(`tab-${cat}`);
                 if (btn) {
-                    btn.className = "px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200";
+                    btn.className = "px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200";
                 }
             });
 
-            if (categoryKey === 'gi_box_2x6') {
-                document.getElementById('tab-2x6').className = "px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-sm";
-            } else if (categoryKey === 'gi_box_2x8') {
-                document.getElementById('tab-2x8').className = "px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-sm";
-            } else {
-                document.getElementById('tab-other').className = "px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-sm";
+            const activeBtn = document.getElementById(`tab-${categoryKey}`);
+            if (activeBtn) {
+                activeBtn.className = "px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-sm";
             }
 
             renderQuickTable(categoryKey);
         }
 
+        // แสดงตารางตัวอย่างขนาดและน้ำหนักด่วน
         function renderQuickTable(categoryKey) {
             const tbody = document.getElementById('quick-spec-tbody');
             tbody.innerHTML = '';
@@ -379,7 +493,7 @@
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50 border-b border-slate-100";
                 tr.innerHTML = `
-                    <td class="px-3 py-2 font-medium text-slate-800">${item.thickness} มม.</td>
+                    <td class="px-3 py-2 font-medium text-slate-800">${item.thickness} มม. (${item.width}x${item.height})</td>
                     <td class="px-3 py-2">${item.weightPerMeter.toFixed(2)}</td>
                     <td class="px-3 py-2 font-semibold text-indigo-600">${item.weightPerPiece.toFixed(2)}</td>
                     <td class="px-3 py-2 text-right">
@@ -392,6 +506,7 @@
             });
         }
 
+        // ปุ่มลัดเลือกจากตารางเข้า ฟอร์ม
         function quickAddSpec(categoryKey, specId) {
             document.getElementById('steel-category').value = categoryKey;
             populateSpecOptions(categoryKey);
@@ -399,6 +514,7 @@
             updateSpecInfo();
         }
 
+        // เพิ่มรายการลงตาราง BOQ
         function handleAddBOQ(e) {
             e.preventDefault();
 
@@ -433,11 +549,13 @@
             document.getElementById('input-remark').value = '';
         }
 
+        // ลบรายการใน BOQ
         function removeBOQItem(id) {
             boqItems = boqItems.filter(item => item.id !== id);
             updateBOQTable();
         }
 
+        // ล้างรายการทั้งหมด
         function clearAllBOQ() {
             if (boqItems.length === 0) return;
             if (confirm('คุณต้องการล้างรายการเหล็กทั้งหมดใน BOQ หรือไม่?')) {
@@ -446,6 +564,7 @@
             }
         }
 
+        // อัปเดตตารางสรุปผล BOQ
         function updateBOQTable() {
             const tbody = document.getElementById('boq-tbody');
             const emptyState = document.getElementById('empty-state');
@@ -473,12 +592,12 @@
                             <div class="font-semibold text-slate-800">${item.name}</div>
                             ${item.remark ? `<div class="text-xs text-indigo-600"><i class="fa-solid fa-tag text-[10px]"></i> ${item.remark}</div>` : ''}
                         </td>
-                        <td class="px-3 py-3 text-center font-medium">${item.qty}</td>
+                        <td class="px-3 py-3 text-center font-semibold text-slate-700">${item.qty}</td>
                         <td class="px-3 py-3 text-right font-medium text-emerald-600">${item.totalWeight.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                         <td class="px-3 py-3 text-right">${item.pricePerPiece.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                        <td class="px-3 py-3 text-right font-bold text-slate-800">${item.totalPrice.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        <td class="px-3 py-3 text-right font-bold text-indigo-700">${item.totalPrice.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                         <td class="px-3 py-3 text-center">
-                            <button onclick="removeBOQItem(${item.id})" class="text-rose-500 hover:text-rose-700 p-1 rounded hover:bg-rose-50 transition">
+                            <button onclick="removeBOQItem(${item.id})" class="text-rose-500 hover:text-rose-700 p-1 rounded hover:bg-rose-50 transition" title="ลบรายการ">
                                 <i class="fa-solid fa-trash-can"></i>
                             </button>
                         </td>
@@ -487,25 +606,26 @@
                 });
             }
 
-            // Update Summaries
+            // อัปเดตการแสดงผลส่วนสรุปด้านล่าง
             document.getElementById('summary-total-qty').textContent = totalQty.toLocaleString();
             document.getElementById('summary-total-weight').textContent = totalWeight.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
             document.getElementById('summary-total-price').textContent = totalPrice.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
-            // Header Stats
+            // อัปเดตส่วนแถบสถิติ Header ด้านบน
             document.getElementById('stat-items-count').textContent = boqItems.length;
             document.getElementById('stat-total-weight').textContent = totalWeight.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
             document.getElementById('stat-total-price').textContent = totalPrice.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
         }
 
+        // ส่งออกไฟล์ CSV สำหรับนำไปเปิดใน Excel
         function exportToCSV() {
             if (boqItems.length === 0) {
                 alert('ไม่มีรายการข้อมูลสำหรับส่งออก CSV');
                 return;
             }
 
-            let csvContent = "\uFEFF"; // UTF-8 BOM
-            csvContent += "ลำดับ,รายการสเปกเหล็ก,จำนวน (ท่อน),น้ำหนักรวม (กก.),ราคา/ท่อน (บาท),ราคารวม (บาท),หมายเหตุ\n";
+            let csvContent = "\uFEFF"; // UTF-8 BOM รองรับภาษาไทยใน Excel
+            csvContent += "ลำดับ,รายการสเปกเหล็ก,จำนวน (ท่อน/เส้น),น้ำหนักรวม (กก.),ราคา/หน่วย (บาท),ราคารวม (บาท),หมายเหตุ\n";
 
             boqItems.forEach((item, idx) => {
                 const row = [
@@ -524,7 +644,7 @@
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.setAttribute("href", url);
-            link.setAttribute("download", `Steel_BOQ_Export_${new Date().toISOString().slice(0,10)}.csv`);
+            link.setAttribute("download", `Steel_BOQ_Report_${new Date().toISOString().slice(0,10)}.csv`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
